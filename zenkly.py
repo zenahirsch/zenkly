@@ -146,5 +146,4 @@ def update_macros(ctx, directory, filename):
     with open(path, 'r') as infile:
         data = json.load(infile)
     
-    res = put_macros(config=ctx.obj['configuration'], data=data)
-    click.echo(res)
+    put_macros(config=ctx.obj['configuration'], data=data)
