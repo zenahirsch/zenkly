@@ -6,22 +6,37 @@ import click
 import requests
 import logging
 from jsonschema import validate
+from decorators import rate_limited
 
 
 APP_NAME = 'zenkly'
 
+@rate_limited(1)
 def get(config, url):
-    r = requests.get(url, auth=(config['email'], config['password']))
-    res = r.json()
+    r = requests.get(
+        url, 
+        auth=(config['email'], config['password'])
+    )
+
+    try:
+        res = r.json()
+        if 'error' in res:
+            raise click.UsageError(res['error'])
+    except ValueError:
+        res = r.text
 
     if 'error' in res:
         raise click.UsageError(res['error'])
 
     return res
 
-
+@rate_limited(1)
 def put(config, url, data):
-    r = requests.put(url, auth=(config['email'], config['password']), json=data)
+    r = requests.put(
+        url, 
+        auth=(config['email'], config['password']),
+        json=data
+    )
 
     try:
         res = r.json()
