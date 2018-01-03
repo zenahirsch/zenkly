@@ -54,11 +54,13 @@ def put_all_macros(config, data):
         'description', 'attachments'
     )
 
-    for m in data['macros']:
-        url = 'https://%s.zendesk.com/api/v2/macros/%d.json' % (config['subdomain'], m['id'])
-        macro = { 'macro': { k: m[k] for k in m if k in entries } }
-        res = put(config, url, macro)
-        click.echo(res)
+    with click.progressbar(length=len(data), label='Updating macros...') as bar:
+        for m in data:
+            url = 'https://%s.zendesk.com/api/v2/macros/%d.json' % (config['subdomain'], m['id'])
+            macro = { 'macro': { k: m[k] for k in m if k in entries } }
+            res = put(config, url, macro)
+            bar.update(1)
+            click.echo('response:', res.body)
 
 
 @click.group()
