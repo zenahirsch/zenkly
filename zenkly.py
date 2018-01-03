@@ -4,6 +4,7 @@ import json
 import configparser
 import click
 import requests
+import logging
 
 
 APP_NAME = 'zenkly'
@@ -62,8 +63,21 @@ def put_macros(config, data):
 
 @click.group()
 @click.option('--profile', type=click.STRING, default='default')
+@click.option('--debug', is_flag=True)
 @click.pass_context
-def cli(ctx, profile):
+def cli(ctx, profile, debug):
+    if debug:
+        try:
+            from http.client import HTTPConnection
+        except ImportError:
+            from httplib import HTTPConnection
+        HTTPConnection.debuglevel = 1
+        logging.basicConfig()
+        logging.getLogger().setLevel(logging.DEBUG)
+        requests_log = logging.getLogger("requests.packages.urllib3")
+        requests_log.setLevel(logging.DEBUG)
+        requests_log.propagate = True
+
     if ctx.obj == None:
         ctx.obj = {}
 
