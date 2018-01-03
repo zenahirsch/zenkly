@@ -48,7 +48,7 @@ def get_all_macros(config):
     return all
 
 
-def put_macros(config, data):
+def put_all_macros(config, data):
     entries = (
         'title', 'active', 'actions', 'restriction', 
         'description', 'attachments'
@@ -160,4 +160,4 @@ def update_macros(ctx, directory, filename):
     with open(path, 'r') as infile:
         data = json.load(infile)
     
-    put_macros(config=ctx.obj['configuration'], data=data)
+    put_all_macros(config=ctx.obj['configuration'], data=data['macros'])
