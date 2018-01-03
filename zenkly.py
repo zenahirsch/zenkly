@@ -5,6 +5,7 @@ import configparser
 import click
 import requests
 import logging
+from jsonschema import validate
 
 
 APP_NAME = 'zenkly'
@@ -54,13 +55,29 @@ def put_all_macros(config, data):
         'description', 'attachments'
     )
 
+    failed = []
+
+    with open('macro.schema', 'r') as schema_file:
+        macro_schema = json.load(schema_file)
+
     with click.progressbar(length=len(data), label='Updating macros...') as bar:
         for m in data:
             url = 'https://%s.zendesk.com/api/v2/macros/%d.json' % (config['subdomain'], m['id'])
             macro = { 'macro': { k: m[k] for k in m if k in entries } }
-            res = put(config, url, macro)
+            validate(macro, macro_schema)
+
+            try:
+                put(config, url, macro)
+            except click.UsageError as e:
+                failed.append((m['id'], e.message))
+
             bar.update(1)
-            click.echo('response:', res.body)
+        
+        click.secho('\n\nUpdate complete!')
+
+        click.secho('\nThe following macros could not be updated: ', fg='red', bold=True)
+        for f in failed:
+            click.secho('%d (%s)' % (f[0], f[1]), fg='red')
 
 
 @click.group()
