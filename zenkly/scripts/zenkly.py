@@ -6,10 +6,39 @@ import click
 import requests
 import logging
 from jsonschema import validate
-from decorators import rate_limited
+import time
+import threading
+from functools import wraps
 
 
 APP_NAME = 'zenkly'
+
+def rate_limited(max_per_second: int):
+    """Rate-limits the decorated function locally, for one process."""
+    lock = threading.Lock()
+    min_interval = 1.0 / max_per_second
+
+    def decorate(func):
+        last_time_called = time.perf_counter()
+
+        @wraps(func)
+        def rate_limited_function(*args, **kwargs):
+            lock.acquire()
+            nonlocal last_time_called
+            try:
+                elapsed = time.perf_counter() - last_time_called
+                left_to_wait = min_interval - elapsed
+                if left_to_wait > 0:
+                    time.sleep(left_to_wait)
+
+                return func(*args, **kwargs)
+            finally:
+                last_time_called = time.perf_counter()
+                lock.release()
+
+        return rate_limited_function
+
+    return decorate
 
 @rate_limited(1)
 def get(config, url):
@@ -72,7 +101,7 @@ def put_all_macros(config, data):
 
     failed = []
 
-    with open('macro.schema', 'r') as schema_file:
+    with open('./schemas/macro.schema', 'r') as schema_file:
         macro_schema = json.load(schema_file)
 
     with click.progressbar(length=len(data), label='Updating macros...') as bar:

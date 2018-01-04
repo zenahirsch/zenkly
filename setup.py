@@ -1,10 +1,10 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 setup(
     name='zenkly',
-    version='0.1.1',
-    py_modules=['zenkly'],
+    version='0.1.5',
+    packages=find_packages(),
     description='CLI for Zendesk admin tasks',
     author='Zena Hirsch',
     author_email='hirsch.zena@gmail.com',
@@ -18,6 +18,6 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        zenkly=zenkly:cli
+        zenkly=zenkly.scripts.zenkly:cli
     ''',
 )
