@@ -101,18 +101,18 @@ def put_all_macros(config, data):
 
     failed = []
 
-    schemas_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'schemas'))
+    # schemas_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'schemas'))
 
-    with open(os.path.join(schemas_dir, 'macro.schema'), 'r') as schema_file:
-        macro_schema = json.load(schema_file)
+    # with open(os.path.join(schemas_dir, 'macro.schema'), 'r') as schema_file:
+    #    macro_schema = json.load(schema_file)
 
     with click.progressbar(length=len(data), label='Updating macros...') as bar:
         for m in data:
             macro = { 'macro': { k: m[k] for k in m if k in entries } }
-            try:
-                jsonschema.validate(macro, macro_schema)
-            except jsonschema.exceptions.ValidationError as e:
-                raise click.UsageError('Invalid macro format for update: %s' % e.message)
+            #try:
+            #    jsonschema.validate(macro, macro_schema)
+            #except jsonschema.exceptions.ValidationError as e:
+            #    raise click.UsageError('Invalid macro format for update: %s' % e.message)
 
             url = 'https://%s.zendesk.com/api/v2/macros/%d.json' % (config['subdomain'], m['id'])
 
