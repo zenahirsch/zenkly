@@ -1,0 +1,6 @@
+__pycache__/
+dist/
+macros_edited.json
+zenkly.egg-info/
+zenkly/__pycache__/
+zenkly/scripts/__pycache__/

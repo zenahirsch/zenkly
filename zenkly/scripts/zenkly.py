@@ -1,11 +1,11 @@
 import os
 import errno
-import json
+import simplejson as json
 import configparser
 import click
 import requests
 import logging
-from jsonschema import validate
+import jsonschema
 import time
 import threading
 from functools import wraps
@@ -101,14 +101,20 @@ def put_all_macros(config, data):
 
     failed = []
 
-    with open('./schemas/macro.schema', 'r') as schema_file:
+    schemas_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'schemas'))
+
+    with open(os.path.join(schemas_dir, 'macro.schema'), 'r') as schema_file:
         macro_schema = json.load(schema_file)
 
     with click.progressbar(length=len(data), label='Updating macros...') as bar:
         for m in data:
-            url = 'https://%s.zendesk.com/api/v2/macros/%d.json' % (config['subdomain'], m['id'])
             macro = { 'macro': { k: m[k] for k in m if k in entries } }
-            validate(macro, macro_schema)
+            try:
+                jsonschema.validate(macro, macro_schema)
+            except jsonschema.exceptions.ValidationError as e:
+                raise click.UsageError('Invalid macro format for update: %s' % e.message)
+
+            url = 'https://%s.zendesk.com/api/v2/macros/%d.json' % (config['subdomain'], m['id'])
 
             try:
                 put(config, url, macro)
@@ -221,6 +227,15 @@ def update_macros(ctx, directory, filename):
         raise click.FileError(path, hint='File does not exist')
 
     with open(path, 'r') as infile:
-        data = json.load(infile)
+        try:
+            data = json.load(infile)
+        except ValueError as e:
+            raise click.UsageError('There was a problem loading %s: %s' % (path, e))
+    
+    if not 'macros' in data:
+        raise click.UsageError('Missing `macros` key in %s' % path)
+
+    if not type(data['macros']) is list:
+        raise click.UsageError('Key `macros` in %s must be a list' % path)
     
     put_all_macros(config=ctx.obj['configuration'], data=data['macros'])
