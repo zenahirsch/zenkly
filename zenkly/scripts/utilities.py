@@ -1,3 +1,7 @@
+import os
+import errno
+import csv
+import json
 import click
 import requests
 import time
@@ -214,3 +218,52 @@ def put_all_macros(config, data):
             click.secho('\nThe following macros could not be updated: ', fg='red', bold=True)
             for f in failed:
                 click.secho('%d (%s)' % (f[0], f[1]), fg='red')
+
+
+def get_all_locales(config):
+    url = 'https://%s.zendesk.com/api/v2/locales.json' % config['subdomain']
+    res = get(config, url)
+    all_locales = res['locales']
+
+    with click.progressbar(length=res['count'], label='Getting locales...') as bar:
+        bar.update(len(res['locales']))
+
+        while res['next_page']:
+            res = get(config, res['next_page'])
+            all_locales.append(res['locales'])
+            bar.update(len(res['locales']))
+
+    return all_locales
+
+
+def get_all_hc_by_type(config, locale, type):
+    url = 'https://%s.zendesk.com/api/v2/help_center/%s/%s.json' % (config['subdomain'], locale, type)
+    res = get(config, url)
+    all_data = res[type]
+
+    with click.progressbar(length=res['count'], label='Getting %s for locale %s...' % (type, locale)) as bar:
+        bar.update(len(res[type]))
+
+        while res['next_page']:
+            res = get(config, res['next_page'])
+            all_data.append(res[type])
+            bar.update(len(res[type]))
+
+    return all_data
+
+
+def confirm_or_create_path(path):
+    # check if path exists, and create it if it doesn't
+    if not os.path.exists(path):
+        try:
+            os.makedirs(path)
+        except OSError as error:
+            if error.errno != errno.EEXIST:
+                raise
+
+
+def write_json(output_path, filename, data):
+    confirm_or_create_path(output_path)
+
+    with open(os.path.join(output_path, filename), 'w') as outfile:
+        json.dump(data, outfile, indent=4)
