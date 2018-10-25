@@ -31,4 +31,6 @@ def update_macros(ctx, directory, filename):
     if not type(data['macros']) is list:
         raise click.UsageError('Key `macros` in %s must be a list' % path)
 
+    click.confirm('Are you sure you want to update %d macros?' % len(data['macros']), abort=True)
+
     put_all_macros(config=ctx.obj['configuration'], data=data['macros'])

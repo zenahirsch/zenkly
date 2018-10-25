@@ -31,4 +31,6 @@ def add_macros(ctx, directory, filename):
     if not type(data['macros']) is list:
         raise click.UsageError('Key `macros` in %s must be a list' % path)
 
+    click.confirm('Are you sure you want to add %d macros?' % len(data['macros']), abort=True)
+
     post_all_macros(config=ctx.obj['configuration'], data=data['macros'])
