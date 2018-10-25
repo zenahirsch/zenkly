@@ -4,3 +4,4 @@ macros_edited.json
 zenkly.egg-info/
 zenkly/__pycache__/
 zenkly/scripts/__pycache__/
+.idea/
