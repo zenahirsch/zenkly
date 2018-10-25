@@ -1,7 +1,7 @@
 import os
 from time import time
 import click
-from ..utilities import get_all_locales, get_all_hc_by_type, write_jsons
+from ..utilities import get_all_locales, get_all_hc_by_type, write_json
 
 
 @click.command()
