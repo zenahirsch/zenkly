@@ -186,6 +186,7 @@ def put_all_macros(config, data):
         'description', 'attachments'
     )
 
+    succeeded = []
     failed = []
 
     with click.progressbar(length=len(data), label='Updating macros...') as bar:
@@ -196,6 +197,7 @@ def put_all_macros(config, data):
 
             try:
                 put(config, url, macro)
+                succeeded.append(m['id'])
             except click.UsageError as e:
                 failed.append((m['id'], e.message))
 
@@ -203,6 +205,12 @@ def put_all_macros(config, data):
 
         click.secho('\n\nUpdate complete!')
 
-        click.secho('\nThe following macros could not be updated: ', fg='red', bold=True)
-        for f in failed:
-            click.secho('%d (%s)' % (f[0], f[1]), fg='red')
+        if succeeded:
+            click.secho('\nThe following macros were updated: ', fg='green', bold=True)
+            for s in succeeded:
+                click.secho('%d' % s, fg='green')
+
+        if failed:
+            click.secho('\nThe following macros could not be updated: ', fg='red', bold=True)
+            for f in failed:
+                click.secho('%d (%s)' % (f[0], f[1]), fg='red')
