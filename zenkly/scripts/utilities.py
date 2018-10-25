@@ -126,7 +126,7 @@ def get_all_macros(config):
     with click.progressbar(length=res['count'], label='Getting macros...') as bar:
         bar.update(len(res['macros']))
 
-        while (res['next_page']):
+        while res['next_page']:
             res = get(config, res['next_page'])
             all = all + res['macros']
             bar.update(len(res['macros']))
