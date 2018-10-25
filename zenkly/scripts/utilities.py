@@ -6,7 +6,11 @@ from functools import wraps
 
 
 def rate_limited(max_per_second: int):
-    """Rate-limits the decorated function locally, for one process."""
+    """
+    Rate-limits the decorated function locally, for one process.
+    :param max_per_second: the number of requests allowed per second
+    :return: the decorated function
+    """
     lock = threading.Lock()
     min_interval = 1.0 / max_per_second
 
@@ -35,6 +39,12 @@ def rate_limited(max_per_second: int):
 
 @rate_limited(1)
 def get(config, url):
+    """
+    GET the provided endpoint.
+    :param config: context config
+    :param url: the url to GET
+    :return:
+    """
     r = requests.get(
         url,
         auth=(config['email'], config['password'])
@@ -55,6 +65,13 @@ def get(config, url):
 
 @rate_limited(1)
 def put(config, url, data):
+    """
+    PUT data to the provided endpoint.
+    :param config: context config
+    :param url: the url to PUT data to
+    :param data: the data to PUT
+    :return:
+    """
     r = requests.put(
         url,
         auth=(config['email'], config['password']),
@@ -73,6 +90,13 @@ def put(config, url, data):
 
 @rate_limited(1)
 def post(config, url, data):
+    """
+    POST data to the provided endpoint.
+    :param config: context config
+    :param url: the url to POST the data to
+    :param data: the data to POST
+    :return:
+    """
     r = requests.post(
         url,
         auth=(config['email'], config['password']),
@@ -90,6 +114,11 @@ def post(config, url, data):
 
 
 def get_all_macros(config):
+    """
+    Get all pages of macros from Zendesk.
+    :param config: context config
+    :return: list of macro objects
+    """
     url = 'https://%s.zendesk.com/api/v2/macros.json' % config['subdomain']
     res = get(config, url)
     all = res['macros']
@@ -106,11 +135,17 @@ def get_all_macros(config):
 
 
 def post_all_macros(config, data):
+    """
+    Create macros in Zendesk.
+    :param config: context config
+    :param data: the macro data to POST
+    """
     entries = (
         'title', 'active', 'actions', 'restriction',
         'description', 'attachments'
     )
 
+    succeeded = []
     failed = []
 
     with click.progressbar(length=len(data), label='Adding macros...') as bar:
@@ -119,10 +154,9 @@ def post_all_macros(config, data):
 
             url = 'https://%s.zendesk.com/api/v2/macros.json' % config['subdomain']
 
-            click.echo(macro)
-            '''
             try:
-                post(config, url, macro)
+                res = post(config, url, macro)
+                succeeded.append((m['id'], res['macro']['id']))
             except click.UsageError as e:
                 failed.append((m['id'], e.message))
 
@@ -130,13 +164,23 @@ def post_all_macros(config, data):
 
         click.secho('\n\nAddition complete!')
 
-        click.secho('\nThe following macros could not be added: ', fg='red', bold=True)
-        for f in failed:
-            click.secho('%d (%s)' % (f[0], f[1]), fg='red')
-        '''
+        if succeeded:
+            click.secho('\nThe following macros were added: ', fg='green', bold=True)
+            for s in succeeded:
+                click.secho('%d (new id: %d)' % (s[0], s[1]), fg='green')
+
+        if failed:
+            click.secho('\nThe following macros could not be added: ', fg='red', bold=True)
+            for f in failed:
+                click.secho('%d (%s)' % (f[0], f[1]), fg='red')
 
 
 def put_all_macros(config, data):
+    """
+    Update macros in Zendesk.
+    :param config: context config
+    :param data: the macro data to PUT
+    """
     entries = (
         'title', 'active', 'actions', 'restriction',
         'description', 'attachments'
