@@ -35,4 +35,4 @@ def configure(ctx, subdomain, email, password):
 
     with open(conf_path, 'w') as configfile:
         config.write(configfile)
-        click.echo('Config written to %s' % conf_path)
+        click.echo('Config written to %s' % click.format_filename(conf_path))

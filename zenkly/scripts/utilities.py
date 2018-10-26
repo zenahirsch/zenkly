@@ -1,12 +1,14 @@
 import os
 import errno
-import csv
 import json
 import click
 import requests
 import time
+import shutil
 import threading
 from functools import wraps
+import git
+from .constants import VALID_HC_TYPES
 
 
 def rate_limited(max_per_second: int):
@@ -54,15 +56,20 @@ def get(config, url):
         auth=(config['email'], config['password'])
     )
 
+    # Check for HTTP errors (4xx, 5xx).
+    try:
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        raise click.ClickException(err)
+
+    # Attempt to parse JSON. If valid JSON contains an error, raise it.
+    # If JSON is invalid, raise the error.
     try:
         res = r.json()
         if 'error' in res:
-            raise click.UsageError(res['error'])
-    except ValueError:
-        res = r.text
-
-    if 'error' in res:
-        raise click.UsageError(res['error'])
+            raise click.ClickException(res['error'])
+    except ValueError as err:
+        raise click.ClickException(err)
 
     return res
 
@@ -82,12 +89,20 @@ def put(config, url, data):
         json=data
     )
 
+    # Check for HTTP errors (4xx, 5xx).
+    try:
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        raise click.ClickException(err)
+
+    # Attempt to parse JSON. If valid JSON contains an error, raise it.
+    # If JSON is invalid, raise the error.
     try:
         res = r.json()
         if 'error' in res:
-            raise click.UsageError(res['error'])
-    except ValueError:
-        res = r.text
+            raise click.ClickException(res['error'])
+    except ValueError as err:
+        raise click.ClickException(err)
 
     return res
 
@@ -107,12 +122,20 @@ def post(config, url, data):
         json=data
     )
 
+    # Check for HTTP errors (4xx, 5xx).
+    try:
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        raise click.ClickException(err)
+
+    # Attempt to parse JSON. If valid JSON contains an error, raise it.
+    # If JSON is invalid, raise the error.
     try:
         res = r.json()
         if 'error' in res:
-            raise click.UsageError(res['error'])
-    except ValueError:
-        res = r.text
+            raise click.ClickException(res['error'])
+    except ValueError as err:
+        raise click.ClickException(err)
 
     return res
 
@@ -161,8 +184,8 @@ def post_all_macros(config, data):
             try:
                 res = post(config, url, macro)
                 succeeded.append((m['id'], res['macro']['id']))
-            except click.UsageError as e:
-                failed.append((m['id'], e.message))
+            except click.ClickException as err:
+                failed.append((m['id'], err.message))  # Record failures
 
             bar.update(1)
 
@@ -202,8 +225,8 @@ def put_all_macros(config, data):
             try:
                 put(config, url, macro)
                 succeeded.append(m['id'])
-            except click.UsageError as e:
-                failed.append((m['id'], e.message))
+            except click.ClickException as err:
+                failed.append((m['id'], err.message))  # Record failures
 
             bar.update(1)
 
@@ -236,15 +259,29 @@ def get_all_locales(config):
     return all_locales
 
 
-def get_all_hc_by_type(config, locale, type):
-    url = 'https://%s.zendesk.com/api/v2/help_center/%s/%s.json' % (config['subdomain'], locale, type)
-    res = get(config, url)
-    all_data = res[type]
+def get_all_hc_by_type(config, type):
+    """
+    Get all help center content by type (articles, sections, categories).
+    :param config:
+    :param type:
+    :return:
+    """
+    if type not in VALID_HC_TYPES:
+        raise ValueError('Type must be one of %r' % VALID_HC_TYPES)
 
-    with click.progressbar(length=res['count'], label='Getting %s for locale %s...' % (type, locale)) as bar:
+    click.echo('Getting %s with translations...' % type)
+
+    all_data = []
+
+    url = 'https://%s.zendesk.com/api/v2/help_center/%s.json?include=translations&per_page=100' % (config['subdomain'], type)
+
+    res = get(config, url)
+    all_data.append(res[type])
+
+    with click.progressbar(length=res['count']) as bar:
         bar.update(len(res[type]))
 
-        while res['next_page']:
+        while res['next_page']:  # Get all pages
             res = get(config, res['next_page'])
             all_data.append(res[type])
             bar.update(len(res[type]))
@@ -253,7 +290,7 @@ def get_all_hc_by_type(config, locale, type):
 
 
 def confirm_or_create_path(path):
-    # check if path exists, and create it if it doesn't
+    # Check if path exists, and create it if it doesn't.
     if not os.path.exists(path):
         try:
             os.makedirs(path)
@@ -263,7 +300,36 @@ def confirm_or_create_path(path):
 
 
 def write_json(output_path, filename, data):
+    destination = os.path.join(output_path, filename)
+
+    click.echo('Writing data to %s' % click.format_filename(destination))
+
     confirm_or_create_path(output_path)
 
-    with open(os.path.join(output_path, filename), 'w') as outfile:
-        json.dump(data, outfile, indent=4)
+    with click.open_file(destination, 'w') as f:
+        json.dump(data, f, indent=4)
+
+
+def archive_directory(path):
+    click.echo('Archiving directory: %s' % click.format_filename(path, shorten=True))
+    archive_name = shutil.make_archive(path, 'zip', path)  # Zip up the directory at path
+    shutil.rmtree(path)  # Delete unzipped directory
+
+    return archive_name
+
+
+def push_archive_to_remote(repo_dir, remote_name, archive_path, backup_time):
+    click.echo('Finding repository at %s' % click.format_filename(repo_dir))
+    repo = git.Repo(repo_dir)
+
+    click.echo('Staging %s' % archive_path)
+    repo.index.add([archive_path])
+
+    commit_msg = 'Add backup @ %s' % backup_time
+    click.echo('Committing with message: %s' % commit_msg)
+    repo.index.commit(commit_msg)
+
+    click.echo('Pushing to remote %s' % remote_name)
+    origin = repo.remote(remote_name)
+    origin.push()
+
