@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='zenkly',
-    version='0.1.12',
+    version='0.1.13',
     packages=find_packages(),
     description='CLI for Zendesk admin tasks',
     author='Zena Hirsch',
@@ -18,6 +18,7 @@ setup(
         'jsonschema',
         'colorama',
         'configparser',
+        'gitpython',
     ],
     entry_points='''
         [console_scripts]
