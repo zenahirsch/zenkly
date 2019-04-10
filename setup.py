@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='zenkly',
-    version='0.1.14',
+    version='0.1.15',
     packages=find_packages(),
     description='CLI for Zendesk admin tasks',
     author='Zena Hirsch',
