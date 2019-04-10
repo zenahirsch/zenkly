@@ -19,7 +19,7 @@ def backup_guide(ctx, directory, backup_remotely, remote_name):
 
     for t in ['articles', 'sections', 'categories']:
         try:
-            data = get_all_hc_by_type(config=ctx.obj['configuration'], type=t)
+            data = get_all_hc_by_type(config=ctx.obj['configuration'], guide_type=t)
         except ValueError as err:
             raise click.ClickException(err)
 

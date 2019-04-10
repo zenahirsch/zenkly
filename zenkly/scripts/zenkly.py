@@ -9,6 +9,7 @@ from .commands.get_macros import get_macros
 from .commands.update_macros import update_macros
 from .commands.add_macros import add_macros
 from .commands.backup_guide import backup_guide
+from .commands.create_article_mapping import create_article_mapping
 
 
 @click.group()
@@ -48,3 +49,4 @@ cli.add_command(get_macros)
 cli.add_command(update_macros)
 cli.add_command(add_macros)
 cli.add_command(backup_guide)
+cli.add_command(create_article_mapping)

@@ -259,32 +259,33 @@ def get_all_locales(config):
     return all_locales
 
 
-def get_all_hc_by_type(config, type):
+def get_all_hc_by_type(config, guide_type):
     """
     Get all help center content by type (articles, sections, categories).
     :param config:
-    :param type:
+    :param guide_type:
     :return:
     """
-    if type not in VALID_HC_TYPES:
+    if guide_type not in VALID_HC_TYPES:
         raise ValueError('Type must be one of %r' % VALID_HC_TYPES)
 
-    click.echo('Getting %s with translations...' % type)
+    click.echo('Getting %s with translations...' % guide_type)
 
     all_data = []
 
-    url = 'https://%s.zendesk.com/api/v2/help_center/%s.json?include=translations&per_page=100' % (config['subdomain'], type)
+    url = 'https://%s.zendesk.com/api/v2/help_center/%s.json?include=translations' % (config['subdomain'], guide_type)
 
     res = get(config, url)
-    all_data.append(res[type])
+
+    all_data = all_data + res[guide_type]
 
     with click.progressbar(length=res['count']) as bar:
-        bar.update(len(res[type]))
+        bar.update(len(res[guide_type]))
 
         while res['next_page']:  # Get all pages
             res = get(config, res['next_page'])
-            all_data.append(res[type])
-            bar.update(len(res[type]))
+            all_data = all_data + res[guide_type]
+            bar.update(len(res[guide_type]))
 
     return all_data
 
