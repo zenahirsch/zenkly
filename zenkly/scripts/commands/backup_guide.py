@@ -1,12 +1,13 @@
 import os
 from time import time
+from pathlib import Path
 import click
 from ..utilities import get_all_hc_by_type, write_json, archive_directory, push_archive_to_remote
 
 
 @click.command()
 @click.option('--directory', type=click.Path(exists=True, file_okay=False, writable=True, resolve_path=True),
-              default='.')
+              default=str(Path.home()))
 @click.option('--backup-remotely', is_flag=True)
 @click.option('--remote-name', type=click.STRING, default='origin')
 @click.pass_context
