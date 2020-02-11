@@ -140,13 +140,68 @@ def post(config, url, data):
     return res
 
 
+def post_theme_import_job(config, brand_id):
+    """
+    Create help center theme import job.
+    :param config: context config
+    :param brand_id: the brand id for the relevant help center
+    :return: job json
+    """
+    url = f"https://{config['subdomain']}.zendesk.com/api/guide/theming/{brand_id}/jobs/themes/import/zip.json"
+    res = post(config, url)
+
+    return res['job']['data']
+
+
+def post_theme(config, storage_url, parameters, file):
+    """
+    POST the theme zip file to the provided storage url
+    :param config: context config
+    :param storage_url: the storage url provided by import job response
+    :param parameters: the parameters provided by the import job response
+    :param file: theme zip file
+    :return:
+    """
+    body = {**parameters, 'file': file}
+    res = post(config, storage_url, body)
+
+    return res
+
+
+def get_all_themes(config, brand_id):
+    """
+    Get all themes for the given brand id.
+    :param config: context config
+    :param brand_id: the brand id for the relevant help center
+    :return list: list of all themes
+    """
+    url = f"https://{config['subdomain']}.zendesk.com/api/guide/theming/{brand_id}/themes.json"
+    res = get(config, url)
+
+    return res['themes']
+
+
+def publish_theme(config, brand_id, theme_id):
+    """
+    Publish the given theme for the given brand.
+    :param config: context config
+    :param brand_id: the brand id
+    :param theme_id: the theme id
+    :return:
+    """
+    url = f"https://{config['subdomain']}.zendesk.com/api/guide/theming/{brand_id}/themes/{theme_id}/publish.json"
+    res = post(config, url)
+
+    return res['theme']
+
+
 def get_all_macros(config):
     """
     Get all pages of macros from Zendesk.
     :param config: context config
-    :return: list of macro objects
+    :return:
     """
-    url = 'https://%s.zendesk.com/api/v2/macros.json' % config['subdomain']
+    url = f"https://{config['subdomain']}.zendesk.com/api/v2/macros.json"
     res = get(config, url)
     all = res['macros']
 
@@ -179,7 +234,7 @@ def post_all_macros(config, data):
         for m in data:
             macro = {'macro': {k: m[k] for k in m if k in entries}}
 
-            url = 'https://%s.zendesk.com/api/v2/macros.json' % config['subdomain']
+            url = f"https://{config['subdomain']}.zendesk.com/api/v2/macros.json"
 
             try:
                 res = post(config, url, macro)
@@ -194,12 +249,12 @@ def post_all_macros(config, data):
         if succeeded:
             click.secho('\nThe following macros were added: ', fg='green', bold=True)
             for s in succeeded:
-                click.secho('%d (new id: %d)' % (s[0], s[1]), fg='green')
+                click.secho(f"{s[0]} (new id: {s[1]})", fg='green')
 
         if failed:
             click.secho('\nThe following macros could not be added: ', fg='red', bold=True)
             for f in failed:
-                click.secho('%d (%s)' % (f[0], f[1]), fg='red')
+                click.secho(f"{f[0]} ({f[1]})", fg='red')
 
 
 def put_all_macros(config, data):
@@ -220,7 +275,7 @@ def put_all_macros(config, data):
         for m in data:
             macro = {'macro': {k: m[k] for k in m if k in entries}}
 
-            url = 'https://%s.zendesk.com/api/v2/macros/%d.json' % (config['subdomain'], m['id'])
+            url = f"https://{config['subdomain']}.zendesk.com/api/v2/macros/{m['id']}.json"
 
             try:
                 put(config, url, macro)
@@ -235,16 +290,16 @@ def put_all_macros(config, data):
         if succeeded:
             click.secho('\nThe following macros were updated: ', fg='green', bold=True)
             for s in succeeded:
-                click.secho('%d' % s, fg='green')
+                click.secho(s, fg='green')
 
         if failed:
             click.secho('\nThe following macros could not be updated: ', fg='red', bold=True)
             for f in failed:
-                click.secho('%d (%s)' % (f[0], f[1]), fg='red')
+                click.secho(f"{f[0]} ({f[1]})", fg='red')
 
 
 def get_all_locales(config):
-    url = 'https://%s.zendesk.com/api/v2/locales.json' % config['subdomain']
+    url = f"https://{config['subdomain']}.zendesk.com/api/v2/locales.json"
     res = get(config, url)
     all_locales = res['locales']
 
@@ -267,14 +322,13 @@ def get_all_hc_by_type(config, guide_type):
     :return:
     """
     if guide_type not in VALID_HC_TYPES:
-        raise ValueError('Type must be one of %r' % VALID_HC_TYPES)
+        raise ValueError(f"Type must be one of {VALID_HC_TYPES}")
 
-    click.echo('Getting %s with translations...' % guide_type)
+    click.echo(f"Getting {guide_type} with translations...")
 
     all_data = []
 
-    url = 'https://%s.zendesk.com/api/v2/help_center/%s.json?include=translations' % (config['subdomain'], guide_type)
-
+    url = f"https://{config['subdomain']}.zendesk.com/api/v2/help_center/{guide_type}.json?include=translations"
     res = get(config, url)
 
     all_data = all_data + res[guide_type]
@@ -303,7 +357,7 @@ def confirm_or_create_path(path):
 def write_json(output_path, filename, data):
     destination = os.path.join(output_path, filename)
 
-    click.echo('Writing data to %s' % click.format_filename(destination))
+    click.echo(f"Writing data to {click.format_filename(destination)}")
 
     confirm_or_create_path(output_path)
 
@@ -312,7 +366,7 @@ def write_json(output_path, filename, data):
 
 
 def archive_directory(path):
-    click.echo('Archiving directory: %s' % click.format_filename(path, shorten=True))
+    click.echo(f"Archiving directory: {click.format_filename(path, shorten=True)}")
     archive_name = shutil.make_archive(path, 'zip', path)  # Zip up the directory at path
     shutil.rmtree(path)  # Delete unzipped directory
 
@@ -320,17 +374,17 @@ def archive_directory(path):
 
 
 def push_archive_to_remote(repo_dir, remote_name, archive_path, backup_time):
-    click.echo('Finding repository at %s' % click.format_filename(repo_dir))
+    click.echo(f"Finding repository at {click.format_filename(repo_dir)}")
     repo = git.Repo(repo_dir)
 
-    click.echo('Staging %s' % archive_path)
+    click.echo(f"Staging {archive_path}")
     repo.index.add([archive_path])
 
-    commit_msg = 'Add backup @ %s' % backup_time
-    click.echo('Committing with message: %s' % commit_msg)
+    commit_msg = f"Add backup @ {backup_time}"
+    click.echo(f"Committing with message: {commit_msg}")
     repo.index.commit(commit_msg)
 
-    click.echo('Pushing to remote %s' % remote_name)
+    click.echo(f"Pushing to remote {remote_name}")
     origin = repo.remote(remote_name)
     origin.push()
 
