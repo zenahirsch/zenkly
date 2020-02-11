@@ -6,7 +6,7 @@ from ..utilities import get_all_brands
 @click.command()
 @click.pass_context
 def show_brands(ctx):
-    """Get all macros and save to file."""
+    """Show brands as tabular data."""
     if ctx.obj['configuration'] == {}:
         raise click.UsageError('No configuration found. Try `zenkly configure`', ctx=ctx)
 
