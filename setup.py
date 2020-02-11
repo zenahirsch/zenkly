@@ -19,6 +19,7 @@ setup(
         'colorama',
         'configparser',
         'gitpython',
+        'tabulate',
     ],
     entry_points='''
         [console_scripts]

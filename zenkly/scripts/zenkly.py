@@ -11,6 +11,7 @@ from .commands.add_macros import add_macros
 from .commands.backup_guide import backup_guide
 from .commands.create_article_mapping import create_article_mapping
 from .commands.upload_theme import upload_theme
+from .commands.show_brands import show_brands
 
 
 @click.group()
@@ -52,3 +53,4 @@ cli.add_command(add_macros)
 cli.add_command(backup_guide)
 cli.add_command(create_article_mapping)
 cli.add_command(upload_theme)
+cli.add_command(show_brands)

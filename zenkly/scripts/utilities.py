@@ -346,6 +346,13 @@ def get_all_hc_by_type(config, guide_type):
     return all_data
 
 
+def get_all_brands(config):
+    url = f"https://{config['subdomain']}.zendesk.com/api/v2/brands.json"
+    res = get(config, url)
+
+    return res['brands']
+
+
 def confirm_or_create_path(path):
     # Check if path exists, and create it if it doesn't.
     if not os.path.exists(path):
