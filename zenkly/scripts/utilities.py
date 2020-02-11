@@ -116,10 +116,12 @@ def post(config, url, data):
     :param data: the data to POST
     :return:
     """
+    if data is None:
+        data = {}
     r = requests.post(
         url,
         auth=(config['email'], config['password']),
-        json=data
+        json=data,
     )
 
     # Check for HTTP errors (4xx, 5xx).
