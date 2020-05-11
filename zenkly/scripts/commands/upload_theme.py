@@ -25,29 +25,16 @@ def upload_theme(ctx, brand_id, file):
                files=files)
 
     job_status = 'pending'
-
     click.secho('Waiting for upload job to complete...')
 
     while job_status == 'pending':
         time.sleep(1)
         job = get_theme_job(config=ctx.obj['configuration'], job_id=job['id'])
         job_status = job['status']
-        job['errors'] = [
-            {
-                "title": "Theme not found",
-                "code": "ThemeNotFound",
-                "meta": {}
-            },
-            {
-                "title": "A different error",
-                "code": "ThemeNotFound",
-                "meta": {}
-            }
-        ]
-
-        if job_status == 'failed':
-            click.secho('Complete!')
 
         if job_status == 'completed':
+            click.secho('Complete!')
+
+        if job_status == 'failed':
             errors = reduce(lambda x, y: x + f"\n  {y['title']}: {y['code']}", job['errors'], '  ')
             raise click.ClickException(f"The theme job failed: {click.style(errors, fg='red')}")
