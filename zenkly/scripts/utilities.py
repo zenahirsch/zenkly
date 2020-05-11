@@ -108,7 +108,7 @@ def put(config, url, data):
 
 
 @rate_limited(1)
-def post(config, url, data):
+def post(config, url, data={}):
     """
     POST data to the provided endpoint.
     :param config: context config
@@ -116,8 +116,6 @@ def post(config, url, data):
     :param data: the data to POST
     :return:
     """
-    if data is None:
-        data = {}
     r = requests.post(
         url,
         auth=(config['email'], config['password']),
@@ -142,6 +140,32 @@ def post(config, url, data):
     return res
 
 
+@rate_limited(1)
+def post_form_data(config, url, data={}, files={}):
+    """
+    POST data to the provided endpoint.
+    :param config: context config
+    :param url: the url to POST the data to
+    :param data: the data to POST
+    :return:
+    """
+
+    r = requests.post(
+        url,
+        auth=(config['email'], config['password']),
+        data=data,
+        files=files
+    )
+
+    # Check for HTTP errors (4xx, 5xx).
+    try:
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        raise click.ClickException(err)
+
+    return r
+
+
 def post_theme_import_job(config, brand_id):
     """
     Create help center theme import job.
@@ -149,23 +173,47 @@ def post_theme_import_job(config, brand_id):
     :param brand_id: the brand id for the relevant help center
     :return: job json
     """
-    url = f"https://{config['subdomain']}.zendesk.com/api/guide/theming/{brand_id}/jobs/themes/import/zip.json"
-    res = post(config, url)
+    url = f"https://{config['subdomain']}.zendesk.com/api/v2/guide/theming/jobs/themes/imports"
 
-    return res['job']['data']
+    data = {
+        'job': {
+            'attributes': {
+                'brand_id': brand_id,
+                'format': 'zip',
+            }
+        }
+    }
+
+    res = post(config, url, data)
+
+    return res['job']
 
 
-def post_theme(config, storage_url, parameters, file):
+def get_theme_job(config, job_id):
+    """
+    Retrieve job data (for polling)
+    :param config: context config
+    :param job_id: the job id to retrieve
+    :return: job json
+    """
+    url = f"https://{config['subdomain']}.zendesk.com/api/v2/guide/theming/jobs/{job_id}"
+
+    res = get(config, url)
+
+    return res['job']
+
+def post_theme(config, storage_url, parameters, files):
     """
     POST the theme zip file to the provided storage url
     :param config: context config
     :param storage_url: the storage url provided by import job response
     :param parameters: the parameters provided by the import job response
-    :param file: theme zip file
+    :param files: theme zip file data
     :return:
     """
-    body = {**parameters, 'file': file}
-    res = post(config, storage_url, body)
+    data = {**parameters}
+
+    res = post_form_data(config, storage_url, data=data, files=files)
 
     return res
 
