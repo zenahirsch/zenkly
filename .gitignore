@@ -1,5 +1,6 @@
 __pycache__/
 dist/
+build/
 macros_edited.json
 zenkly.egg-info/
 zenkly/__pycache__/
