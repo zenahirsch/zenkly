@@ -44,7 +44,7 @@ def rate_limited(max_per_second: int):
 
 
 @rate_limited(1)
-def get(config, url):
+def get(config, url, params={}):
     """
     GET the provided endpoint.
     :param config: context config
@@ -53,6 +53,7 @@ def get(config, url):
     """
     r = requests.get(
         url,
+        params=params,
         auth=(config['email'], config['password'])
     )
 
@@ -245,25 +246,52 @@ def publish_theme(config, brand_id, theme_id):
     return res['theme']
 
 
-def get_all_macros(config):
+def get_all_macros(config, category=None, active_only=False):
     """
     Get all pages of macros from Zendesk.
     :param config: context config
+    :param category: only get macros from this category
+    :param active: flag to only include active macros
     :return:
     """
     url = f"https://{config['subdomain']}.zendesk.com/api/v2/macros.json"
-    res = get(config, url)
+    params = {}
+
+    if active_only:
+        params['active'] = 'true'
+
+    if category:
+        params['category'] = category
+
+    res = get(config, url, params=params)
     all = res['macros']
 
     with click.progressbar(length=res['count'], label='Getting macros...') as bar:
         bar.update(len(res['macros']))
 
         while res['next_page']:
-            res = get(config, res['next_page'])
+            res = get(config, res['next_page'], params=params)
             all = all + res['macros']
             bar.update(len(res['macros']))
 
     return all
+
+
+def parse_actions_for_csv(actions):
+    parsed_actions = {}
+
+    for action in actions:
+        action_field = action['field']
+        action_value = action['value']
+
+        key_name = f"action:{action_field}"
+
+        if not key_name in parsed_actions:
+            parsed_actions[key_name] = []
+
+        parsed_actions[key_name].append(action_value)
+
+        return parsed_actions
 
 
 def post_all_macros(config, data):
