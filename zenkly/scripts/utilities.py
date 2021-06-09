@@ -277,6 +277,64 @@ def get_all_macros(config, category=None, active_only=False):
     return all
 
 
+def get_all_triggers(config, category_id=None, active_only=False):
+    """
+    Get all pages of triggers from Zendesk.
+    :param config: context config
+    :param category_id: only get triggers from this category
+    :param active: flag to only include active triggers
+    :return:
+    """
+    url = f"https://{config['subdomain']}.zendesk.com/api/v2/triggers.json"
+    params = {}
+
+    if active_only:
+        params['active'] = 'true'
+
+    if category_id:
+        params['category_id'] = category_id
+
+    res = get(config, url, params=params)
+    all = res['triggers']
+
+    with click.progressbar(length=res['count'], label='Getting triggers...') as bar:
+        bar.update(len(res['triggers']))
+
+        while res['next_page']:
+            res = get(config, res['next_page'], params=params)
+            all = all + res['triggers']
+            bar.update(len(res['triggers']))
+
+    return all
+
+
+def get_all_automations(config, active_only=False):
+    """
+    Get all pages of automations from Zendesk.
+    :param config: context config
+    :param active: flag to only include active automations
+    :return:
+    """
+    url = f"https://{config['subdomain']}.zendesk.com/api/v2/automations.json"
+    params = {}
+
+    if active_only:
+        params['active'] = 'true'
+
+    res = get(config, url, params=params)
+    all = res['automations']
+
+    with click.progressbar(length=res['count'], label='Getting automations...') as bar:
+        bar.update(len(res['automations']))
+
+        while res['next_page']:
+            res = get(config, res['next_page'], params=params)
+            all = all + res['automations']
+            bar.update(len(res['automations']))
+
+    return all
+
+
 def parse_actions_for_csv(actions):
     parsed_actions = {}
 
@@ -291,7 +349,29 @@ def parse_actions_for_csv(actions):
 
         parsed_actions[key_name].append(action_value)
 
-        return parsed_actions
+    return parsed_actions
+
+
+def parse_conditions_for_csv(conditions):
+    parsed_conditions = {}
+
+    for condition in conditions['all']:
+        key_name = f"condition:all:{condition['field']}"
+
+        if not key_name in parsed_conditions:
+            parsed_conditions[key_name] = []
+
+        parsed_conditions[key_name].append(f"{condition['operator']} {condition['value']}")
+
+    for condition in conditions['any']:
+        key_name = f"condition:any:{condition['field']}"
+
+        if not key_name in parsed_conditions:
+            parsed_conditions[key_name] = []
+
+        parsed_conditions[key_name].append(f"{condition['operator']} {condition['value']}")
+
+    return parsed_conditions
 
 
 def post_all_macros(config, data):

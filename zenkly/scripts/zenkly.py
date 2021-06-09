@@ -6,6 +6,8 @@ from .constants import APP_NAME
 
 from .commands.configure import configure
 from .commands.get_macros import get_macros
+from .commands.get_triggers import get_triggers
+from .commands.get_automations import get_automations
 from .commands.update_macros import update_macros
 from .commands.add_macros import add_macros
 from .commands.backup_guide import backup_guide
@@ -48,6 +50,8 @@ def cli(ctx, profile, debug):
 
 cli.add_command(configure)
 cli.add_command(get_macros)
+cli.add_command(get_triggers)
+cli.add_command(get_automations)
 cli.add_command(update_macros)
 cli.add_command(add_macros)
 cli.add_command(backup_guide)

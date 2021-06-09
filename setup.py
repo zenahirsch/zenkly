@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setup(
     name='zenkly',
-    version='0.1.21',
+    version='0.1.22',
     packages=find_packages(),
     description='CLI for Zendesk admin tasks',
     long_description=long_description,
