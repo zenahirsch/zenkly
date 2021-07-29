@@ -1,4 +1,5 @@
 import os
+import csv
 import errno
 import json
 import click
@@ -528,6 +529,22 @@ def write_json(output_path, filename, data):
 
     with click.open_file(destination, 'w') as f:
         json.dump(data, f, indent=4)
+
+
+def write_csv(output_path, filename, data):
+    destination = os.path.join(output_path, filename)
+
+    click.echo(f"Writing data to {click.format_filename(destination)}")
+
+    confirm_or_create_path(output_path)
+
+    with click.open_file(destination, 'w') as f:
+        fieldnames = data[0].keys()
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for d in data:
+            writer.writerow(d)
 
 
 def archive_directory(path):

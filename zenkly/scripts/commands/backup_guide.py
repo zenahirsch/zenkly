@@ -2,7 +2,7 @@ import os
 from time import time
 from pathlib import Path
 import click
-from ..utilities import get_all_hc_by_type, write_json, archive_directory, push_archive_to_remote
+from ..utilities import get_all_hc_by_type, write_json, write_csv, archive_directory, push_archive_to_remote
 
 
 @click.command()
@@ -10,8 +10,9 @@ from ..utilities import get_all_hc_by_type, write_json, archive_directory, push_
               default=str(Path.home()))
 @click.option('--backup-remotely', is_flag=True)
 @click.option('--remote-name', type=click.STRING, default='origin')
+@click.option('--format', type=click.Choice(['json', 'csv'], case_sensitive=False), default='json')
 @click.pass_context
-def backup_guide(ctx, directory, backup_remotely, remote_name):
+def backup_guide(ctx, directory, backup_remotely, remote_name, format):
     """Backup Guide categories, sections and articles."""
     if ctx.obj['configuration'] == {}:
         raise click.UsageError('No configuration found. Try `zenkly configure`', ctx=ctx)
@@ -25,9 +26,15 @@ def backup_guide(ctx, directory, backup_remotely, remote_name):
             raise click.ClickException(err)
 
         output_path = os.path.join(directory, 'backup_%s' % backup_time)
-        filename = '%s.json' % t
 
-        write_json(output_path=output_path, filename=filename, data=data)
+        if format == 'json':
+            filename = '%s.json' % t
+            write_json(output_path=output_path, filename=filename, data=data)
+        elif format == 'csv':
+            filename = '%s.csv' % t
+            write_csv(output_path=output_path, filename=filename, data=data)
+        else:
+            raise click.UsageError('Unknown export format.', ctx=ctx)
 
     archive_path = archive_directory(output_path)
 
