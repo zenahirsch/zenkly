@@ -335,6 +335,41 @@ def get_all_automations(config, active_only=False):
 
     return all
 
+def get_all_views(config, group_id=None, active_only=False, access=None):
+    """
+    Get all pages of automations from Zendesk.
+    :param config: context config
+    :param group_id: only views belonging to given group
+    :param active: flag to only include active automations
+    :param access: only views with given access. May be "personal", "shared", or "account"
+    :return:
+    """
+    url = f"https://{config['subdomain']}.zendesk.com/api/v2/views.json"
+    params = {}
+
+    if group_id:
+        params['group_id'] = group_id
+
+    if active_only:
+        params['active'] = 'true'
+
+    if access:
+        params['access'] = access
+
+    res = get(config, url, params=params)
+    all = res['views']
+
+    with click.progressbar(length=res['count'], label='Getting views...') as bar:
+        bar.update(len(res['views']))
+
+        while res['next_page']:
+            res = get(config, res['next_page'], params=params)
+            all = all + res['views']
+            bar.update(len(res['views']))
+
+    print(len(all))
+    return all
+
 
 def parse_actions_for_csv(actions):
     parsed_actions = {}
