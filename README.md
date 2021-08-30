@@ -6,7 +6,7 @@ Over the years, I’ve written many scripts to read/edit data from Zendesk. Some
 
 ### Prerequisites
 
-In order to install and use Zenkly, you’ll need to have Python 3 installed on your computer. You can follow these instructions to ensure you have the latest version of Python installed. _Note: Zenkly is only compatible with Python 3._
+In order to install and use Zenkly, you’ll need to have Python 3 installed on your computer. You can follow [these instructions](https://realpython.com/installing-python/) to ensure you have the latest version of Python installed. _Note: Zenkly is only compatible with Python 3._
 
 You can verify that you have the correct version of Python installed by running the following command in your terminal:
 
