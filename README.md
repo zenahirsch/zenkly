@@ -35,9 +35,10 @@ The first time you use Zenkly, you’ll need to configure it to use your Zendesk
 You will be prompted to enter your Zendesk subdomain, email address, and password. If you are using an API token to authenticate (instead of a password), enter your credentials as follows:
 
 ```
-Email: youremail@gmail.com/token
+Email: [youremail@gmail.com]/token
 Password: [your API token]
 ```
+### Multiple Configurations
 
 If you’ve already configured Zenkly, but would like to set up a second configuration (to work with two different Zendesk instances, for example), you can run the following:
 
